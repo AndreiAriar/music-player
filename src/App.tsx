@@ -102,13 +102,16 @@ export default function App() {
     if (currentIndex === null) setCurrentIndex(0);
   };
 
-  const addCover = async (index: number, file: File) => {
-    const song = songs[index];
+  // Matches by song id (not array index) so it stays correct even if the
+  // visible list is filtered or reordered by the time the cover finishes
+  // uploading.
+  const addCover = async (songId: string, file: File) => {
+    const song = songs.find((s) => s.id === songId);
     if (!song) return;
 
     await saveCoverFile(song.id, file);
     const coverUrl = URL.createObjectURL(file);
-    setSongs((prev) => prev.map((s, i) => (i === index ? { ...s, coverUrl } : s)));
+    setSongs((prev) => prev.map((s) => (s.id === songId ? { ...s, coverUrl } : s)));
   };
 
   const removeSong = async (index: number) => {

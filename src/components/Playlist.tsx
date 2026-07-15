@@ -1,27 +1,29 @@
 import type { ChangeEvent } from "react";
-import { Upload, Search, FileMusic, ImagePlus } from "lucide-react";
+import { Upload, Search, FileMusic, ImagePlus, Trash2 } from "lucide-react";
 import type { Song } from "../types";
 
 interface PlaylistProps {
   songs: Song[];
   query: string;
   currentIndex: number | null;
-  isUploading: boolean;
+  isUploading?: boolean;
   setQuery: (q: string) => void;
   handleUpload: (e: ChangeEvent<HTMLInputElement>) => void;
   playAt: (index: number) => void;
   addCover: (songId: string, file: File) => void;
+  removeSong: (index: number) => void;
 }
 
 export default function Playlist({
   songs,
   query,
   currentIndex,
-  isUploading,
+  isUploading = false,
   setQuery,
   handleUpload,
   playAt,
   addCover,
+  removeSong,
 }: PlaylistProps) {
   const filtered = songs
     .map((s, i) => ({ ...s, i }))
@@ -100,6 +102,15 @@ export default function Playlist({
                 }}
               />
             </label>
+
+            <button
+              onClick={() => removeSong(s.i)}
+              className="text-amber-500/40 hover:text-red-400 flex-shrink-0 transition-colors"
+              title="Remove track"
+              aria-label={`Remove ${s.name}`}
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
         ))}
       </div>
