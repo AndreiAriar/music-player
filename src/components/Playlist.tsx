@@ -1,27 +1,27 @@
 import type { ChangeEvent } from "react";
-import { Upload, Search, FileMusic, ImagePlus, Trash2 } from "lucide-react";
+import { Upload, Search, FileMusic, ImagePlus } from "lucide-react";
 import type { Song } from "../types";
 
 interface PlaylistProps {
   songs: Song[];
   query: string;
   currentIndex: number | null;
+  isUploading: boolean;
   setQuery: (q: string) => void;
   handleUpload: (e: ChangeEvent<HTMLInputElement>) => void;
   playAt: (index: number) => void;
-  addCover: (index: number, file: File) => void | Promise<void>;
-  removeSong: (index: number) => void;
+  addCover: (songId: string, file: File) => void;
 }
 
 export default function Playlist({
   songs,
   query,
   currentIndex,
+  isUploading,
   setQuery,
   handleUpload,
   playAt,
   addCover,
-  removeSong,
 }: PlaylistProps) {
   const filtered = songs
     .map((s, i) => ({ ...s, i }))
@@ -39,10 +39,21 @@ export default function Playlist({
             className="w-full bg-stone-900/60 border border-stone-800 focus:border-amber-500 rounded-full pl-9 pr-4 py-2 text-sm text-amber-50 placeholder:text-amber-100/30 outline-none transition-colors"
           />
         </div>
-        <label className="flex items-center gap-2 border border-amber-800/50 hover:border-amber-500 hover:bg-amber-500/10 transition-colors px-4 py-2 rounded-full cursor-pointer text-sm font-mono text-amber-200 whitespace-nowrap">
+        <label
+          className={`flex items-center gap-2 border border-amber-800/50 hover:border-amber-500 hover:bg-amber-500/10 transition-colors px-4 py-2 rounded-full cursor-pointer text-sm font-mono text-amber-200 whitespace-nowrap ${
+            isUploading ? "opacity-50 pointer-events-none" : ""
+          }`}
+        >
           <Upload size={15} />
-          Upload
-          <input type="file" accept="audio/*" multiple className="hidden" onChange={handleUpload} />
+          {isUploading ? "Saving..." : "Upload"}
+          <input
+            type="file"
+            accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg,.flac"
+            multiple
+            className="hidden"
+            onChange={handleUpload}
+            disabled={isUploading}
+          />
         </label>
       </div>
 
@@ -84,20 +95,11 @@ export default function Playlist({
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) addCover(s.i, file);
+                  if (file) addCover(s.id, file);
                   e.target.value = "";
                 }}
               />
             </label>
-
-            <button
-              onClick={() => removeSong(s.i)}
-              className="text-amber-500/40 hover:text-red-400 flex-shrink-0 transition-colors"
-              title="Remove song"
-              aria-label="Remove song"
-            >
-              <Trash2 size={16} />
-            </button>
           </div>
         ))}
       </div>
