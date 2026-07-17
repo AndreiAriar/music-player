@@ -41,15 +41,15 @@ export default function LyricsPanel({
   }, [activeIndex, isSynced]);
 
   return (
-    <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-4">
+    <div className="bg-black/60 border border-sky-500/20 rounded-2xl p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-mono uppercase tracking-wider text-amber-500/60">
-          Lyrics {isSynced && <span className="text-amber-600/50">(synced)</span>}
+        <p className="text-xs font-mono uppercase tracking-wider text-sky-400/70">
+          Lyrics {isSynced && <span className="text-pink-400/60">(synced)</span>}
         </p>
         <button
           onClick={onGenerateLyrics}
           disabled={!hasCurrentSong || isLoading}
-          className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider border border-amber-800/50 hover:border-amber-500 hover:bg-amber-500/10 disabled:opacity-30 disabled:cursor-not-allowed px-3 py-1.5 rounded-full text-amber-200 transition-colors"
+          className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider border border-pink-500/40 hover:border-pink-400 hover:bg-pink-500/10 disabled:opacity-30 disabled:cursor-not-allowed px-3 py-1.5 rounded-full text-sky-300 transition-colors"
         >
           {isLoading ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
           {isLoading ? "Looking up..." : "Find lyrics"}
@@ -64,7 +64,7 @@ export default function LyricsPanel({
                 key={i}
                 data-line-index={i}
                 className={`font-serif text-sm leading-relaxed transition-colors ${
-                  i === activeIndex ? "text-amber-400 font-medium" : "text-amber-100/40"
+                  i === activeIndex ? "text-pink-400 font-medium" : "text-white/30"
                 }`}
               >
                 {line.text}
@@ -72,7 +72,7 @@ export default function LyricsPanel({
             ))}
           </div>
         ) : (
-          <pre className="whitespace-pre-wrap font-serif text-sm text-amber-100/80 leading-relaxed">
+          <pre className="whitespace-pre-wrap font-serif text-sm text-white/80 leading-relaxed">
             {plainLyrics || "Select a track and hit \u201cFind lyrics\u201d to look them up."}
           </pre>
         )}

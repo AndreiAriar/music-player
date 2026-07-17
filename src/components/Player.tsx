@@ -12,6 +12,8 @@ interface PlayerProps {
   togglePlayPause: () => void;
   next: () => void;
   prev: () => void;
+  isPreview?: boolean;
+  onExitPreview?: () => void;
 }
 
 export default function Player({
@@ -24,6 +26,8 @@ export default function Player({
   togglePlayPause,
   next,
   prev,
+  isPreview = false,
+  onExitPreview,
 }: PlayerProps) {
   const [duration, setDuration] = useState(0);
 
@@ -56,34 +60,44 @@ export default function Player({
   };
 
   return (
-    <div className="sm:col-span-2 flex flex-col items-center bg-stone-900/60 border border-stone-800 rounded-2xl p-6">
+    <div className="sm:col-span-2 flex flex-col items-center bg-black/60 border border-sky-500/20 rounded-2xl p-6">
       <div className="relative w-40 h-40 mb-6">
         {/* Vinyl disc — shape never changes, only the center label swaps */}
         <div
-          className="w-40 h-40 rounded-full bg-gradient-to-br from-stone-800 to-stone-950 border-4 border-stone-700 flex items-center justify-center shadow-lg"
+          className="w-40 h-40 rounded-full bg-gradient-to-br from-zinc-900 to-black border-4 border-pink-500/40 flex items-center justify-center shadow-lg"
           style={{ animation: isPlaying ? "spin 3s linear infinite" : "none" }}
         >
           {current?.coverUrl ? (
             <img
               src={current.coverUrl}
               alt={`${current.name} cover`}
-              className="w-20 h-20 rounded-full object-cover border-2 border-stone-950"
+              className="w-20 h-20 rounded-full object-cover border-2 border-black"
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-amber-600 border-2 border-stone-950" />
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-pink-500 border-2 border-black" />
           )}
           {/* spindle hole */}
-          <div className="absolute inset-0 m-auto w-2 h-2 rounded-full bg-stone-950 border border-stone-600" />
+          <div className="absolute inset-0 m-auto w-2 h-2 rounded-full bg-black border border-sky-400/50" />
         </div>
-        <Disc3 className="absolute -top-2 -right-2 text-amber-600/40" size={28} />
+        <Disc3 className="absolute -top-2 -right-2 text-pink-400/50" size={28} />
       </div>
 
-      <p className="font-serif text-lg text-center truncate w-full text-amber-50">
+      <p className="font-serif text-lg text-center truncate w-full text-white">
         {current ? current.name : "No track selected"}
       </p>
-      <p className="text-xs font-mono text-amber-500/60 mb-4">
-        {current ? `Track ${currentIndex! + 1} of ${totalSongs}` : "Upload a song to begin"}
-      </p>
+      {isPreview ? (
+        <button
+          onClick={onExitPreview}
+          className="flex items-center gap-1.5 text-xs font-mono text-pink-400 hover:text-pink-300 mb-4 transition-colors"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
+          Streaming preview — tap to stop
+        </button>
+      ) : (
+        <p className="text-xs font-mono text-sky-400/60 mb-4">
+          {current ? `Track ${currentIndex! + 1} of ${totalSongs}` : "Upload a song to begin"}
+        </p>
+      )}
 
       {/* Time adjust: scrub bar first */}
       <div className="w-full mb-4">
@@ -95,10 +109,10 @@ export default function Player({
           value={Math.min(progress, duration || progress)}
           onChange={(e) => seekTo(Number(e.target.value))}
           disabled={!current}
-          className="w-full h-1 accent-amber-600 disabled:opacity-30 cursor-pointer"
+          className="w-full h-1 accent-pink-500 disabled:opacity-30 cursor-pointer"
           aria-label="Seek"
         />
-        <div className="flex items-center justify-between text-xs font-mono text-amber-500/50 mt-1">
+        <div className="flex items-center justify-between text-xs font-mono text-sky-400/50 mt-1">
           <span>{fmt(progress)}</span>
           <span>{fmt(duration)}</span>
         </div>
@@ -109,19 +123,24 @@ export default function Player({
         <button
           onClick={() => skip(-10)}
           disabled={!current}
-          className="flex items-center gap-1 text-xs font-mono text-amber-200 hover:text-amber-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1 text-xs font-mono text-sky-300 hover:text-pink-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Rewind 10 seconds"
         >
           <Rewind size={14} />
           10s
         </button>
-        <button onClick={prev} className="text-amber-200 hover:text-amber-500 transition-colors" aria-label="Previous track">
+        <button
+          onClick={prev}
+          disabled={isPreview}
+          className="text-sky-300 hover:text-pink-400 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+          aria-label="Previous track"
+        >
           <SkipBack size={22} fill="currentColor" />
         </button>
         <button
           onClick={togglePlayPause}
           disabled={!current}
-          className="w-12 h-12 rounded-full bg-amber-600 hover:bg-amber-500 disabled:bg-stone-700 disabled:cursor-not-allowed flex items-center justify-center text-stone-950 transition-colors"
+          className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-pink-500 hover:opacity-90 disabled:from-zinc-700 disabled:to-zinc-700 disabled:cursor-not-allowed flex items-center justify-center text-black transition-colors"
           aria-label="Play or pause"
         >
           {isPlaying ? (
@@ -130,13 +149,18 @@ export default function Player({
             <Play size={20} fill="currentColor" className="ml-0.5" />
           )}
         </button>
-        <button onClick={next} className="text-amber-200 hover:text-amber-500 transition-colors" aria-label="Next track">
+        <button
+          onClick={next}
+          disabled={isPreview}
+          className="text-sky-300 hover:text-pink-400 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next track"
+        >
           <SkipForward size={22} fill="currentColor" />
         </button>
         <button
           onClick={() => skip(10)}
           disabled={!current}
-          className="flex items-center gap-1 text-xs font-mono text-amber-200 hover:text-amber-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1 text-xs font-mono text-sky-300 hover:text-pink-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Forward 10 seconds"
         >
           10s

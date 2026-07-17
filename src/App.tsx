@@ -19,6 +19,8 @@ import LyricsPanel from "./components/LyricsPanel";
 import Auth from "./components/Auth";
 import VinylLogo from "./components/VinylLogo";
 import Profile from "./components/Profile";
+import SearchOnline from "./components/SearchOnline";
+import type { ITunesTrack } from "./utils/itunes";
 
 interface StoredSong extends Song {
   docId: string;
@@ -34,9 +36,14 @@ export default function App() {
   const [syncedLyrics, setSyncedLyrics] = useState<LyricLine[]>([]);
   const [lyricsLoading, setLyricsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [previewTrack, setPreviewTrack] = useState<Song | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const current = currentIndex !== null ? songs[currentIndex] : null;
+  const libraryCurrent = currentIndex !== null ? songs[currentIndex] : null;
+  // A streaming preview (search result) takes over playback without
+  // being saved anywhere — it's just the <audio> element pointed at a
+  // remote URL for as long as it's playing.
+  const current = previewTrack ?? libraryCurrent;
 
   useEffect(
     () =>
@@ -73,7 +80,7 @@ export default function App() {
     if (!audioRef.current) return;
     if (isPlaying) audioRef.current.play().catch(() => {});
     else audioRef.current.pause();
-  }, [isPlaying, currentIndex]);
+  }, [isPlaying, currentIndex, current]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -105,6 +112,54 @@ export default function App() {
   // Matches by song id (not array index) so it stays correct even if the
   // visible list is filtered or reordered by the time the cover finishes
   // uploading.
+  // Downloads an iTunes preview clip (and its artwork, if any) and saves
+  // through the same local IndexedDB + Firestore pipeline as a manual
+  // upload — from here on, a web-added song behaves identically to
+  // one you uploaded yourself.
+  const addFromWeb = async (track: ITunesTrack) => {
+    if (!user) return;
+
+    const audioRes = await fetch(track.previewUrl);
+    if (!audioRes.ok) throw new Error("Could not download track");
+    const audioBlob = await audioRes.blob();
+    const audioFile = new File([audioBlob], `${track.artist} - ${track.name}.m4a`, {
+      type: "audio/mp4",
+    });
+
+    const audioId = `${audioFile.name}-${Date.now()}-${Math.random()}`;
+    const name = audioFile.name.replace(/\.[^/.]+$/, "");
+
+    await saveAudioFile(audioId, audioFile);
+    const docId = await saveSongMeta(user.uid, audioId, name);
+
+    let coverUrl: string | undefined;
+    if (track.image) {
+      try {
+        const imgRes = await fetch(track.image);
+        if (imgRes.ok) {
+          const imgBlob = await imgRes.blob();
+          const imgFile = new File([imgBlob], `${audioId}-cover.jpg`, {
+            type: imgBlob.type || "image/jpeg",
+          });
+          await saveCoverFile(audioId, imgFile);
+          coverUrl = URL.createObjectURL(imgFile);
+        }
+      } catch {
+        // Cover art is a nice-to-have — don't fail the whole add over it.
+      }
+    }
+
+    const newSong: StoredSong = {
+      id: audioId,
+      docId,
+      name,
+      url: URL.createObjectURL(audioFile),
+      coverUrl,
+    };
+    setSongs((prev) => [...prev, newSong]);
+    if (currentIndex === null) setCurrentIndex(0);
+  };
+
   const addCover = async (songId: string, file: File) => {
     const song = songs.find((s) => s.id === songId);
     if (!song) return;
@@ -135,6 +190,7 @@ export default function App() {
   };
 
   const playAt = (index: number) => {
+    setPreviewTrack(null);
     setCurrentIndex(index);
     setIsPlaying(true);
     setPlainLyrics("");
@@ -143,6 +199,30 @@ export default function App() {
 
   const togglePlayPause = () => {
     if (current) setIsPlaying((p) => !p);
+  };
+
+  // Starts (or pauses/resumes) streaming a search result without saving
+  // it anywhere. Clicking the same track again just toggles play/pause;
+  // clicking a different one switches the stream.
+  const togglePreviewTrack = (track: ITunesTrack) => {
+    if (previewTrack?.id === track.id) {
+      togglePlayPause();
+      return;
+    }
+    setPreviewTrack({
+      id: track.id,
+      name: `${track.artist} - ${track.name}`,
+      url: track.previewUrl,
+      coverUrl: track.image,
+    });
+    setIsPlaying(true);
+    setPlainLyrics("");
+    setSyncedLyrics([]);
+  };
+
+  const stopPreview = () => {
+    setPreviewTrack(null);
+    setIsPlaying(false);
   };
 
   const next = () => {
@@ -209,7 +289,7 @@ export default function App() {
 
   if (user === undefined) {
     return (
-      <div className="min-h-screen w-full bg-stone-950 flex items-center justify-center">
+      <div className="min-h-screen w-full bg-black flex items-center justify-center">
         <VinylLogo size={48} />
       </div>
     );
@@ -220,14 +300,14 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-stone-950 text-amber-50 flex items-start justify-center p-6">
+    <div className="min-h-screen w-full bg-black text-white flex items-start justify-center p-6">
       <div className="w-full max-w-3xl">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <VinylLogo size={32} />
             <div>
-              <p className="text-xs tracking-[0.3em] text-amber-500/70 font-mono uppercase">Life is better with</p>
-              <h1 className="text-3xl font-serif tracking-tight text-amber-50">Music</h1>
+              <p className="text-xs tracking-[0.3em] text-pink-400/80 font-mono uppercase">Life is better with</p>
+              <h1 className="text-3xl font-serif tracking-tight bg-gradient-to-r from-sky-400 to-pink-500 bg-clip-text text-transparent">Music</h1>
             </div>
           </div>
           <Profile user={user} />
@@ -244,9 +324,17 @@ export default function App() {
             togglePlayPause={togglePlayPause}
             next={next}
             prev={prev}
+            isPreview={!!previewTrack}
+            onExitPreview={stopPreview}
           />
 
           <div className="sm:col-span-3 flex flex-col gap-4">
+            <SearchOnline
+              onAdd={addFromWeb}
+              onPreviewToggle={togglePreviewTrack}
+              previewId={previewTrack?.id ?? null}
+              isPreviewPlaying={isPlaying}
+            />
             <Playlist
               songs={songs}
               query={query}
