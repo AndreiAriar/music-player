@@ -62,21 +62,9 @@ export default function SearchOnline({
 
   return (
     <div className="bg-black/60 border border-sky-500/20 rounded-2xl p-4 flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-mono uppercase tracking-wider text-sky-400/70">
-          Search songs <span className="text-pink-400/60">(iTunes previews, 30s clips)</span>
-        </p>
-        {hasContent && (
-          <button
-            onClick={closeSearch}
-            className="flex-shrink-0 text-sky-400/50 hover:text-pink-400 transition-colors"
-            aria-label="Close search"
-            title="Close search"
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
+      <p className="text-xs font-mono uppercase tracking-wider text-sky-400/70">
+        Search songs <span className="text-pink-400/60">(iTunes previews, 30s clips)</span>
+      </p>
 
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -99,6 +87,16 @@ export default function SearchOnline({
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : "Search"}
         </button>
+        {hasContent && (
+          <button
+            onClick={closeSearch}
+            className="flex-shrink-0 text-sky-400/50 hover:text-pink-400 transition-colors"
+            aria-label="Close search"
+            title="Close search"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {error && <p className="text-xs text-red-400">{error}</p>}
