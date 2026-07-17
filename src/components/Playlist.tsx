@@ -38,7 +38,10 @@ export default function Playlist({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search your uploads..."
-            className="w-full bg-black/60 border border-sky-500/30 focus:border-pink-400 rounded-full pl-9 pr-4 py-2 text-sm text-white placeholder:text-white/30 outline-none transition-colors"
+            // text-base (16px) rather than text-sm (14px) — iOS Safari
+            // and Chrome auto-zoom the page when focusing an input
+            // with a font-size under 16px. 16px+ suppresses that.
+            className="w-full bg-black/60 border border-sky-500/30 focus:border-pink-400 rounded-full pl-9 pr-4 py-2 text-base sm:text-sm text-white placeholder:text-white/30 outline-none transition-colors"
           />
         </div>
         <label

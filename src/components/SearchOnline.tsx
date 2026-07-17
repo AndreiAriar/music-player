@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Loader2, Plus, Check, Play, Pause } from "lucide-react";
+import { Search, Loader2, Plus, Check, Play, Pause, X } from "lucide-react";
 import { searchITunes, type ITunesTrack } from "../utils/itunes";
 
 interface SearchOnlineProps {
@@ -49,11 +49,34 @@ export default function SearchOnline({
     }
   };
 
+  // Clears the query, results, and any error — collapsing the panel
+  // back to its empty state without closing/unmounting the component.
+  const closeSearch = () => {
+    setQuery("");
+    setResults([]);
+    setError("");
+    setAddingId(null);
+  };
+
+  const hasContent = query.length > 0 || results.length > 0 || !!error;
+
   return (
     <div className="bg-black/60 border border-sky-500/20 rounded-2xl p-4 flex flex-col gap-3">
-      <p className="text-xs font-mono uppercase tracking-wider text-sky-400/70">
-        Search songs <span className="text-pink-400/60">(iTunes previews, 30s clips)</span>
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-mono uppercase tracking-wider text-sky-400/70">
+          Search songs <span className="text-pink-400/60">(iTunes previews, 30s clips)</span>
+        </p>
+        {hasContent && (
+          <button
+            onClick={closeSearch}
+            className="flex-shrink-0 text-sky-400/50 hover:text-pink-400 transition-colors"
+            aria-label="Close search"
+            title="Close search"
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
 
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -63,7 +86,10 @@ export default function SearchOnline({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && search()}
             placeholder="Search songs or artists..."
-            className="w-full bg-black/60 border border-sky-500/30 focus:border-pink-400 rounded-full pl-9 pr-4 py-2 text-sm text-white placeholder:text-white/30 outline-none transition-colors"
+            // text-base (16px) rather than text-sm (14px) — iOS Safari
+            // and Chrome auto-zoom the page when focusing an input
+            // with a font-size under 16px. 16px+ suppresses that.
+            className="w-full bg-black/60 border border-sky-500/30 focus:border-pink-400 rounded-full pl-9 pr-4 py-2 text-base sm:text-sm text-white placeholder:text-white/30 outline-none transition-colors"
           />
         </div>
         <button
